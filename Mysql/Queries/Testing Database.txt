@@ -1,0 +1,179 @@
+-- Top Featured Vehicle
+select Vehicle_Name, vehicle_type, Seating_Capacity,concat("Engine is ", Engine_in_CC, " cc and Top Speed is ",Top_Speed_kmph," kmph") "Top Feature", count(Vehicle_Id) "Unit"
+from vehicles 
+where Top_Speed_Kmph =( select max(Top_Speed_Kmph) from vehicles) and Engine_in_CC =( select max(Engine_in_CC) from vehicles);
+
+
+-- Vehicles with highest subscription fee
+select distinct vehicle_name, model, Vehicle_Type, Seating_Capacity, Subscription_Fee 
+from vehicles
+order by Subscription_Fee desc;
+
+
+-- Most demanding Cars
+select count(N.vehicle_name) "Total Subscribed Times", N.Vehicle_Name
+from (select s.Vehicle_Id , v.vehicle_name
+		from subscribers s
+		join vehicles v
+		on s.Vehicle_Id = v.Vehicle_Id
+		order by s.Vehicle_Id) N
+        group by N.Vehicle_Name
+        order by count(N.vehicle_name) desc;
+
+
+
+-- Unsubscribed or Remaining Vehicles 
+select Vehicle_Name, vehicle_Type, count(Vehicle_Name) "Unit" 
+from vehicles v
+left join subscribers s
+on v.Vehicle_Id = s.Vehicle_Id
+where s.Vehicle_Id is null
+group by Vehicle_Name
+order by count(Vehicle_Name);
+
+
+-- Subscribed Vehicle
+select distinct v.Vehicle_Id, v.Vehicle_Name 
+from vehicles v
+join subscribers s
+on v.Vehicle_Id = s.Vehicle_Id;
+
+
+-- Subscribers Who enroll package
+select s.Client_Id ,s.ClientName, v.Subscription_Fee-v.Subscription_Fee*(p.Discount_in_percentage/100) "Subscriber's payment with Package"
+from subscribers s
+join vehicles v
+on s.vehicle_id=v.vehicle_id
+join subscription_package p
+on s.Package_Id=p.Package_Id;
+
+
+-- Subscribers Who did not enroll packages
+select s.Client_Id ,s.ClientName, v.Subscription_Fee "Subscriber's payment without Package"
+from subscribers s
+join vehicles v
+on s.vehicle_id=v.vehicle_id
+where s.Package_Id is null;
+
+
+
+-- subscription per division
+
+select count(WL.Division) as "Total Subscription", WL.Division 
+from warehouse_locations WL
+join subscribers VS
+on WL.location_id = VS.location_id
+group by WL.Division;
+
+
+
+-- query total invesment on vehicle
+
+select sum(e.Exporting_Cost) + sum(v.Local_Cost) as "Total Invesment"
+from exporters_info e
+join vehicles v
+on e.Vehicle_Name = v.Vehicle_Name;
+
+
+
+-- query total Expense
+
+select sum(e.Exporting_Cost) + sum(v.Local_Cost) as "Total Expense"
+from exporters_info e
+join vehicles v
+on e.Vehicle_Name = v.Vehicle_Name
+
+union
+
+select sum(salary_amount) from emp_salary_log;
+
+
+
+
+-- income from sub
+select sum(Subscription_Fee) as 'INCOME FROM SUBCRITION VCH'from vehicles;
+
+
+-- discont in total
+select  SUM(Discount_in_percentage)/100 ' total given DISCOUNT(%) ' from subscription_package;
+
+
+
+
+
+
+
+
+
+
+-- Update test
+
+-- add discount in new customer
+update subscribers
+ set Package_id=(select Discount_in_percentage
+ from subscription_package where Package_Id=101);
+ 
+-- increase subscription fee
+update vehicles
+set Subscription_Fee=60000
+where vehicle_id=3;
+
+-- updating client's discount
+update Subscribers
+set package_id = null
+where Client_Id= 203;
+
+select * from subscribers;
+
+-- updating subscription fees
+update vehicles
+set Subscription_Fee=60000
+where Vehicle_id = 1;
+
+
+
+
+
+
+-- Delete test
+-- If a vehicle is no longer available for our campany.
+delete from vehicles 
+where Vehicle_Id = 20;
+
+-- If subscription period ends.
+delete from subscribers 
+where expiry_date = str_to_date('13-Feb-21','%d-%b-%y') and Wants_to_Extend ="No";
+
+
+
+
+function to reach our goal:
+
+CREATE DEFINER=`root`@`localhost` FUNCTION `Extend Subscription Period or return vehicles`(cid int, pid int, WTE varchar(3)) RETURNS int
+    DETERMINISTIC
+BEGIN
+if pid is not null and WTE = "Yes" then 
+update subscribers
+ set Package_id=(select Discount_in_percentage  
+				 from subscription_package 
+                 where Package_Id = pid ), expiry_date = CURDATE() + (select duration_indays 
+																	  from subscription_package
+																	  where Package_Id= pid), Wants_to_Extend = wte
+ where expiry_date = CURDATE() and client_id = cid;
+ 
+ elseif pid is null and WTE = "Yes" then
+ update subscribers
+ set Package_id= pid, expiry_date = curdate()+30, Wants_to_Extend = wte
+ where expiry_date = CURDATE()  and client_id = cid;
+ 
+ else
+ delete from subscriber
+ where client_id = cid;
+
+RETURN 1;
+end if;
+END
+
+
+-- Subscriber wants to renew or not (Query)
+select Extend_Subscription_Period_or_return_vehicles(101,null,'Yes');

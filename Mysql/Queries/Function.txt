@@ -1,0 +1,7 @@
+CREATE DEFINER=`root`@`localhost` FUNCTION `Pay_Salary`(Salary_Id int, Salary_Amount decimal(8,2)) RETURNS int
+    DETERMINISTIC
+BEGIN
+insert into Emp_Salary_Log(Salary_Id, Salary_Amount)
+values (Salary_Id, Salary_Amount);
+RETURN 1;
+END

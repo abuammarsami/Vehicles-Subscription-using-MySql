@@ -1,0 +1,77 @@
+-- Subscribers Who enroll package
+select s.Client_Id ,s.ClientName, v.Subscription_Fee-v.Subscription_Fee*(p.Discount_in_percentage/100) "Subscriber's payment with Package"
+from subscribers s
+join vehicles v
+on s.vehicle_id=v.vehicle_id
+join subscription_package p
+on s.Package_Id=p.Package_Id;
+ 
+ -- Subscribers Who did not enroll packages
+select s.Client_Id ,s.ClientName, v.Subscription_Fee "Subscriber's payment without Package"
+from subscribers s
+join vehicles v
+on s.vehicle_id=v.vehicle_id
+where s.Package_Id is null;
+
+-- Vehicles with highest subscription fee
+select distinct vehicle_name, model, Vehicle_Type, Seating_Capacity, Subscription_Fee 
+from vehicles
+order by Subscription_Fee desc;
+
+
+-- Most demanding Cars
+select count(N.vehicle_name) "Total Subscribed Times", N.Vehicle_Name
+from (select s.Vehicle_Id , v.vehicle_name
+		from subscribers s
+		join vehicles v
+		on s.Vehicle_Id = v.Vehicle_Id
+		order by s.Vehicle_Id) N
+        group by N.Vehicle_Name
+        order by count(N.vehicle_name) desc;
+
+-- Total unit Of Same Vehicle
+select count(vehicle_name) Unit, Vehicle_name
+from vehicles 
+group by Vehicle_Name
+order by count(vehicle_name) desc;
+
+
+-- Total unit of Same Vehicle Type
+select count(vehicle_type) "Unit", Vehicle_type
+from vehicles 
+group by Vehicle_type
+order by count(vehicle_type) desc, Vehicle_Type;
+
+-- Pay Salary of Employees
+select Pay_Salary(884, (select salary_amount
+						from emp_salary s
+                        join employees e
+                        on s.Job_Id = e.job_id
+                        where salary_id = 884));
+                        
+select * From emp_salary_log;
+select * from emp_salary;
+select * from employees;
+select * from vehicles;
+
+-- Top Featured Vehicle
+select Vehicle_Name, vehicle_type, Seating_Capacity,concat("Engine is ", Engine_in_CC, " cc and Top Speed is ",Top_Speed_kmph," kmph") "Top Feature", count(Vehicle_Id) "Unit"
+from vehicles 
+where Top_Speed_Kmph =( select max(Top_Speed_Kmph) from vehicles) and Engine_in_CC =( select max(Engine_in_CC) from vehicles);
+
+-- Subscribed Vehicle
+select distinct v.Vehicle_Id, v.Vehicle_Name 
+from vehicles v
+join subscribers s
+on v.Vehicle_Id = s.Vehicle_Id;
+
+
+
+-- Unsubscribed or Remaining Vehicles 
+select Vehicle_Name, vehicle_Type, count(Vehicle_Name) "Unit" 
+from vehicles v
+left join subscribers s
+on v.Vehicle_Id = s.Vehicle_Id
+where s.Vehicle_Id is null
+group by Vehicle_Name
+order by count(Vehicle_Name);

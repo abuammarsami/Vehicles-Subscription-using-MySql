@@ -1,0 +1,21 @@
+CREATE DEFINER=`root`@`localhost` TRIGGER `subscribers_AFTER_INSERT` AFTER INSERT ON `subscribers` FOR EACH ROW BEGIN
+if new.package_Id is not null then
+	insert into payment_log(payment_id,paid_amount)
+    values (new.payment_Id,(select v.Subscription_Fee-v.Subscription_Fee*(p.Discount_in_percentage/100)
+			from subscribers s
+            join vehicles v
+            on s.vehicle_id=v.vehicle_id
+            join subscription_package p
+            on s.Package_Id=p.Package_Id
+            where s.client_id = new.client_id
+            ));
+else insert into payment_log(payment_id,paid_amount)
+	 values (new.payment_Id,(select v.Subscription_Fee
+							from subscribers s
+							join vehicles v
+							on s.vehicle_id=v.vehicle_id
+                            where s.client_id = new.client_id)
+            
+            );
+end if;
+END
